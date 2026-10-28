@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>5G Network Slicing — Analytics, History & Visual Results</title>
+    <meta name="description" content="In-depth analytics, Chart.js visualizations, before/after allocation comparisons, and downloadable simulation history." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+    <!-- Chart.js 4.4 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <a href="/" class="nav-brand">
+            <div class="logo-badge">
+                <span class="logo-5g">5G</span>
+                <span class="logo-text">SLICING</span>
+            </div>
+            <span class="sim-tag">ANALYTICS ENGINE</span>
+        </a>
+
+        <ul class="nav-links" id="navLinks">
+            <li><a href="/" class="nav-link" id="nav-home">Home</a></li>
+            <li><a href="/dashboard" class="nav-link" id="nav-dashboard">Dashboard (NOC)</a></li>
+            <li><a href="/results" class="nav-link active" id="nav-results">Analytics & Results</a></li>
+        </ul>
+
+        <div class="nav-status">
+            <span class="pulse-dot"></span>
+            <span>Simulation History Engine</span>
+        </div>
+
+        <button class="hamburger" id="hamburger" aria-label="Toggle Navigation">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- MAIN ANALYTICS WRAPPER -->
+    <main class="container dash-wrapper">
+
+        <!-- PAGE HEADER -->
+        <header class="dash-header">
+            <div class="dash-title-wrap">
+                <h1>
+                    <span>📊</span> 5G Analytics & Simulation Results
+                </h1>
+                <p class="dash-sub">Visual analysis of priority allocation, demand vs allocation, latency QoS, and run history</p>
+            </div>
+            <div class="dash-meta-pills">
+                <button class="btn btn-primary btn-sm" onclick="loadAllAnalytics()">
+                    <span>↻</span> Refresh Charts
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="exportHistoryCSV()">
+                    <span>📥</span> Export CSV History
+                </button>
+                <button class="btn btn-secondary btn-sm" onclick="clearHistoryRecords()">
+                    <span>🗑️</span> Clear History
+                </button>
+            </div>
+        </header>
+
+        <!-- SUMMARY MINI-KPIS -->
+        <section class="kpi-grid">
+            <div class="glass-card kpi-card">
+                <div class="kpi-icon" style="color: #38bdf8;">🎯</div>
+                <div class="kpi-body">
+                    <span class="kpi-val" id="res-active-scenario" style="font-size: 1.15rem;">Normal Traffic</span>
+                    <span class="kpi-label">Active Scenario</span>
+                </div>
+            </div>
+
+            <div class="glass-card kpi-card">
+                <div class="kpi-icon" style="color: #f59e0b;">⚡</div>
+                <div class="kpi-body">
+                    <span class="kpi-val mono" id="res-total-demand">100 Mbps</span>
+                    <span class="kpi-label">Total Traffic Requested</span>
+                </div>
+            </div>
+
+            <div class="glass-card kpi-card">
+                <div class="kpi-icon" style="color: #ef4444;">⚠️</div>
+                <div class="kpi-body">
+                    <span class="kpi-val mono" id="res-unmet-demand">0 Mbps</span>
+                    <span class="kpi-label">Unmet Demand</span>
+                </div>
+            </div>
+
+            <div class="glass-card kpi-card">
+                <div class="kpi-icon" style="color: #10b981;">📜</div>
+                <div class="kpi-body">
+                    <span class="kpi-val mono" id="res-history-count">0 Runs</span>
+                    <span class="kpi-label">Simulation Runs Logged</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5 INTERACTIVE CHART.JS VISUALIZATIONS (Feature F) -->
+        <section class="analytics-grid">
+
+            <!-- Chart 1: Bandwidth Allocation by Slice -->
+            <div class="glass-card chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">1. Bandwidth Allocation by Slice</h3>
+                        <span class="chart-sub">Share of 100 Mbps carrier capacity (%)</span>
+                    </div>
+                    <span class="sim-tag">DYNAMIC SHARE</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chartAllocDoughnut"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 2: Traffic Demand vs Allocated Bandwidth (Grouped) -->
+            <div class="glass-card chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">2. Traffic Demand vs Allocated Bandwidth</h3>
+                        <span class="chart-sub">Compares requested Mbps against actual granted allocation</span>
+                    </div>
+                    <span class="sim-tag">DEMAND VS GRANTED</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chartDemandVsAlloc"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 3: Network Utilization Over Time (Timeline) -->
+            <div class="glass-card chart-card wide-chart">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">3. Network Carrier Utilization Timeline</h3>
+                        <span class="chart-sub">Historical carrier load percentage over past 20 simulation checkpoints</span>
+                    </div>
+                    <span class="sim-tag">20-POINT TIMELINE</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chartUtilTimeline"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 4: Latency QoS Comparison Between Slices -->
+            <div class="glass-card chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">4. Simulated Latency Comparison (ms)</h3>
+                        <span class="chart-sub">URLLC vs mMTC vs eMBB latency against warning threshold</span>
+                    </div>
+                    <span class="sim-tag">QoS BENCHMARK</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chartLatencyComparison"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart 5: Before vs After Allocation Comparison -->
+            <div class="glass-card chart-card">
+                <div class="chart-header">
+                    <div>
+                        <h3 class="chart-title">5. Before vs After Allocation Comparison</h3>
+                        <span class="chart-sub">Dynamic shift across slices from the previous scenario</span>
+                    </div>
+                    <span class="sim-tag">BEFORE / AFTER</span>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="chartBeforeAfter"></canvas>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- BEFORE / AFTER SIDE-BY-SIDE SUMMARY -->
+        <section class="glass-card table-card" style="margin-bottom: 2rem;">
+            <div class="chart-header">
+                <div>
+                    <h3 class="chart-title">⚖️ Dynamic Re-Allocation Snapshot</h3>
+                    <p class="dash-sub">Immediate before-and-after bandwidth transitions across logical slices</p>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+                <!-- Before Box -->
+                <div style="background: rgba(0,0,0,0.3); padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06);">
+                    <div style="font-weight: 700; color: #94a3b8; font-size: 0.85rem; margin-bottom: 0.75rem;">BEFORE RE-ALLOCATION</div>
+                    <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.88rem;">
+                            <span>🚑 Emergency:</span>
+                            <strong id="snap-before-em" class="mono">20 Mbps</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.88rem;">
+                            <span>🚦 Smart IoT:</span>
+                            <strong id="snap-before-iot" class="mono">30 Mbps</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.88rem;">
+                            <span>🎥 Video:</span>
+                            <strong id="snap-before-vid" class="mono">50 Mbps</strong>
+                        </div>
+                        <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 0.4rem; display: flex; justify-content: space-between; font-weight: 700;">
+                            <span>TOTAL:</span>
+                            <span class="mono">100 Mbps</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- After Box -->
+                <div style="background: rgba(56, 189, 248, 0.05); padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid rgba(56, 189, 248, 0.25);">
+                    <div style="font-weight: 700; color: #38bdf8; font-size: 0.85rem; margin-bottom: 0.75rem;">AFTER DYNAMIC ALLOCATION</div>
+                    <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.88rem;">
+                            <span>🚑 Emergency:</span>
+                            <strong id="snap-after-em" class="mono" style="color: #fca5a5;">20 Mbps</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.88rem;">
+                            <span>🚦 Smart IoT:</span>
+                            <strong id="snap-after-iot" class="mono" style="color: #fcd34d;">30 Mbps</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.88rem;">
+                            <span>🎥 Video:</span>
+                            <strong id="snap-after-vid" class="mono" style="color: #93c5fd;">50 Mbps</strong>
+                        </div>
+                        <div style="border-top: 1px solid rgba(56, 189, 248, 0.2); padding-top: 0.4rem; display: flex; justify-content: space-between; font-weight: 700; color: #38bdf8;">
+                            <span>TOTAL:</span>
+                            <span class="mono">100 Mbps (Invariant)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FULL SIMULATION HISTORY TABLE (Feature F) -->
+        <section class="glass-card table-card" id="historySection">
+            <div class="chart-header">
+                <div>
+                    <h3 class="chart-title">📜 Chronological Simulation History Log</h3>
+                    <p class="dash-sub">Full audit trail of executed scenarios with allocation decisions and QoS compliance</p>
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="exportHistoryCSV()">
+                    <span>📥</span> Download CSV Report
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="data-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Scenario</th>
+                            <th>Emergency (Mbps)</th>
+                            <th>Smart IoT (Mbps)</th>
+                            <th>Video (Mbps)</th>
+                            <th>Demand</th>
+                            <th>Unmet</th>
+                            <th>Util %</th>
+                            <th>QoS Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <!-- Populated dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-left">
+                <span class="logo-5g" style="font-size: 1.1rem;">5G NETWORK SLICING ANALYTICS</span>
+                <p>Advanced QoS telemetry, dynamic resource reallocation and simulation logging.</p>
+            </div>
+            <div class="footer-right">
+                <a href="/dashboard" class="btn btn-primary btn-sm">Return to NOC Dashboard</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script src="{{ url_for('static', filename='js/results.js') }}"></script>
+    <script>
+        // Hamburger Menu
+        const hamburger = document.getElementById('hamburger');
+        const navLinks = document.getElementById('navLinks');
+        if (hamburger && navLinks) {
+            hamburger.addEventListener('click', () => {
+                navLinks.classList.toggle('open');
+                hamburger.classList.toggle('active');
+            });
+        }
+    </script>
+</body>
+</html>

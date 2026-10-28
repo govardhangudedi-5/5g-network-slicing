@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>5G Network Slicing for Smart Services with Dynamic Resource Allocation</title>
+    <meta name="description" content="Academic simulation of 5G network slicing for smart services with priority-aware dynamic resource allocation and QoS monitoring." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <a href="/" class="nav-brand">
+            <div class="logo-badge">
+                <span class="logo-5g">5G</span>
+                <span class="logo-text">SLICING</span>
+            </div>
+            <span class="sim-tag">ACADEMIC CAPSTONE</span>
+        </a>
+
+        <ul class="nav-links" id="navLinks">
+            <li><a href="/" class="nav-link active" id="nav-home">Home</a></li>
+            <li><a href="/dashboard" class="nav-link" id="nav-dashboard">Dashboard (NOC)</a></li>
+            <li><a href="/results" class="nav-link" id="nav-results">Analytics & Results</a></li>
+        </ul>
+
+        <div class="nav-status">
+            <span class="pulse-dot"></span>
+            <span>Simulation Online (100 Mbps)</span>
+        </div>
+
+        <button class="hamburger" id="hamburger" aria-label="Toggle Navigation">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <header class="hero">
+        <div class="hero-content">
+            <div class="hero-pill">
+                <span class="pulse-dot"></span>
+                <span>Software-Based 5G Simulation · No Physical Hardware Required</span>
+            </div>
+
+            <h1 class="hero-title">
+                5G Network Slicing for Smart Services with <br />
+                <span class="hero-gradient">Dynamic Resource Allocation</span>
+            </h1>
+
+            <p class="hero-subtitle">
+                Priority-Aware Virtual Network Slicing with Real-Time QoS Telemetry
+            </p>
+
+            <p class="hero-description">
+                Experience how next-generation 5G networks divide a single <strong>100 Mbps physical carrier</strong> into independent logical network slices. The system automatically reallocates bandwidth according to dynamic traffic surges, enforces mission-critical priority preemption, prevents resource starvation with minimum guarantees, and monitors simulated Ultra-Reliable Low-Latency (URLLC) Quality of Service.
+            </p>
+
+            <div class="hero-actions">
+                <a href="/dashboard" class="btn btn-primary">
+                    <span>🚀 Launch NOC Dashboard</span>
+                </a>
+                <a href="/results" class="btn btn-secondary">
+                    <span>📊 View Visual Analytics</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- SYSTEM OVERVIEW & ARCHITECTURE -->
+    <section class="container" style="margin-bottom: 4rem;">
+        <div class="glass-card alloc-bar-card">
+            <div class="alloc-bar-top">
+                <div class="alloc-bar-title">
+                    <span>📡</span>
+                    <span>100 Mbps Virtual 5G Carrier Baseline Distribution</span>
+                </div>
+                <span class="alloc-capacity-pill">Invariant Constraint: Exactly 100 Mbps Total</span>
+            </div>
+
+            <div class="alloc-track">
+                <div class="alloc-segment seg-emergency" style="width: 20%;">
+                    <span>Emergency Slice: 20 Mbps (20%)</span>
+                </div>
+                <div class="alloc-segment seg-iot" style="width: 30%;">
+                    <span>Smart IoT Slice: 30 Mbps (30%)</span>
+                </div>
+                <div class="alloc-segment seg-video" style="width: 50%;">
+                    <span>Video Streaming Slice: 50 Mbps (50%)</span>
+                </div>
+            </div>
+
+            <div class="alloc-legend">
+                <div class="legend-item">
+                    <span class="legend-dot em"></span>
+                    <span><strong>Emergency (URLLC):</strong> 20 Mbps (Min guarantee: 15 Mbps, Priority: HIGH)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot iot"></span>
+                    <span><strong>Smart IoT (mMTC):</strong> 30 Mbps (Min guarantee: 10 Mbps, Priority: MEDIUM)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot vid"></span>
+                    <span><strong>Video (eMBB):</strong> 50 Mbps (Min guarantee: 5 Mbps, Priority: NORMAL)</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- THE THREE NETWORK SLICES IN DETAIL -->
+    <section class="container" style="margin-bottom: 4rem;">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <h2>The Three Independent Virtual Network Slices</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+                Tailored for distinct 5G ITU service classes with isolated QoS and priority guarantees
+            </p>
+        </div>
+
+        <div class="slices-grid">
+            <!-- Emergency Slice -->
+            <article class="glass-card slice-card card-emergency">
+                <div class="sc-header">
+                    <div class="sc-title-group">
+                        <div class="sc-icon-box" style="color: var(--emergency);">🚑</div>
+                        <div class="sc-names">
+                            <h3>Emergency Slice</h3>
+                            <span class="sc-type">URLLC · Ultra-Reliable Low-Latency</span>
+                        </div>
+                    </div>
+                    <div class="sc-bw-block">
+                        <span class="sc-bw-val mono">20</span>
+                        <span class="sc-bw-unit">Mbps</span>
+                    </div>
+                </div>
+
+                <div class="dash-meta-pills">
+                    <span class="badge priority-high">HIGH PRIORITY (Weight: 3)</span>
+                    <span class="badge status-active">MIN RESERVATION: 15 Mbps</span>
+                </div>
+
+                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                    Mission-critical emergency communication supporting ambulances, hospital telemetry, disaster response teams, and autonomous emergency vehicle braking. Target latency &lt; 10 ms. Always given highest preemption during congestion.
+                </p>
+
+                <div class="sc-footer">
+                    <span>Simulated Endpoints: <strong>Ambulance Fleet & EMS</strong></span>
+                    <span class="mono" style="color: var(--emergency);">Priority #1</span>
+                </div>
+            </article>
+
+            <!-- Smart IoT Slice -->
+            <article class="glass-card slice-card card-iot">
+                <div class="sc-header">
+                    <div class="sc-title-group">
+                        <div class="sc-icon-box" style="color: var(--iot);">🚦</div>
+                        <div class="sc-names">
+                            <h3>Smart IoT Slice</h3>
+                            <span class="sc-type">mMTC · Massive Machine Type Comms</span>
+                        </div>
+                    </div>
+                    <div class="sc-bw-block">
+                        <span class="sc-bw-val mono">30</span>
+                        <span class="sc-bw-unit">Mbps</span>
+                    </div>
+                </div>
+
+                <div class="dash-meta-pills">
+                    <span class="badge priority-medium">MEDIUM PRIORITY (Weight: 2)</span>
+                    <span class="badge status-active">MIN RESERVATION: 10 Mbps</span>
+                </div>
+
+                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                    Large-scale urban IoT connectivity for smart traffic signals, environmental sensors, grid monitoring, and smart city infrastructure. Tolerates moderate latency (15-25 ms) with reliable delivery.
+                </p>
+
+                <div class="sc-footer">
+                    <span>Simulated Endpoints: <strong>Traffic Grid & Sensors</strong></span>
+                    <span class="mono" style="color: var(--iot);">Priority #2</span>
+                </div>
+            </article>
+
+            <!-- Video Slice -->
+            <article class="glass-card slice-card card-video">
+                <div class="sc-header">
+                    <div class="sc-title-group">
+                        <div class="sc-icon-box" style="color: var(--video);">🎥</div>
+                        <div class="sc-names">
+                            <h3>Video Slice</h3>
+                            <span class="sc-type">eMBB · Enhanced Mobile Broadband</span>
+                        </div>
+                    </div>
+                    <div class="sc-bw-block">
+                        <span class="sc-bw-val mono">50</span>
+                        <span class="sc-bw-unit">Mbps</span>
+                    </div>
+                </div>
+
+                <div class="dash-meta-pills">
+                    <span class="badge priority-normal">NORMAL PRIORITY (Weight: 1)</span>
+                    <span class="badge status-active">MIN RESERVATION: 5 Mbps</span>
+                </div>
+
+                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;">
+                    High-bandwidth media distribution, 4K municipal CCTV feeds, media streaming, and general mobile broadband. Bandwidth yields during mission-critical congestion to protect emergency traffic.
+                </p>
+
+                <div class="sc-footer">
+                    <span>Simulated Endpoints: <strong>4K CCTV & Video Streaming</strong></span>
+                    <span class="mono" style="color: var(--video);">Priority #3</span>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <!-- HOW THE ALGORITHM WORKS -->
+    <section class="container" style="margin-bottom: 4rem;">
+        <div class="glass-card" style="padding: 2rem;">
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <h2>Deterministic Dynamic Allocation Algorithm</h2>
+                <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+                    How the Flask backend deterministically solves resource allocation under carrier constraints
+                </p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem;">
+                <div style="background: rgba(0,0,0,0.3); padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #38bdf8;">01. Detect Demand</div>
+                    <h4 style="margin-bottom: 0.35rem;">Traffic Monitoring</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-muted);">
+                        Orchestrator continuously monitors requested bandwidth demands (Mbps) and computes total demand.
+                    </p>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.3); padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #10b981;">02. Reserve Baselines</div>
+                    <h4 style="margin-bottom: 0.35rem;">Prevent Starvation</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-muted);">
+                        Guarantees minimum slice reservations (15 Mbps Emergency, 10 Mbps IoT, 5 Mbps Video). Total 30 Mbps protected.
+                    </p>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.3); padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #f59e0b;">03. Priority Scheduling</div>
+                    <h4 style="margin-bottom: 0.35rem;">Dynamic Grant</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-muted);">
+                        Remaining 70 Mbps capacity pool is granted strictly in order of service priority: Emergency first, then IoT, then Video.
+                    </p>
+                </div>
+
+                <div style="background: rgba(0,0,0,0.3); padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem; color: #ef4444;">04. Invariant Assertion</div>
+                    <h4 style="margin-bottom: 0.35rem;">Constraint Check</h4>
+                    <p style="font-size: 0.82rem; color: var(--text-muted);">
+                        Backend validates SUM(allocations) == 100 Mbps strictly and reports any unmet demand when requested &gt; 100 Mbps.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-left">
+                <span class="logo-5g" style="font-size: 1.15rem;">5G NETWORK SLICING SIMULATION</span>
+                <p>Computer Networks Capstone Project — Dynamic Resource Allocation</p>
+                <p style="font-size: 0.75rem; color: var(--text-dim);">Academic software simulation for educational demonstrations.</p>
+            </div>
+            <div class="footer-right">
+                <a href="/dashboard" class="btn btn-primary btn-sm">Open NOC Dashboard</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const hamburger = document.getElementById('hamburger');
+        const navLinks = document.getElementById('navLinks');
+        if (hamburger && navLinks) {
+            hamburger.addEventListener('click', () => {
+                navLinks.classList.toggle('open');
+                hamburger.classList.toggle('active');
+            });
+        }
+    </script>
+</body>
+</html>

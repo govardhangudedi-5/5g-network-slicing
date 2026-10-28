@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>5G Network Slicing — Operations Center & Dynamic Allocation Monitor</title>
+    <meta name="description"
+        content="Professional 5G network slicing dashboard with real-time dynamic resource allocation, QoS monitoring, fault injection, and interactive topology." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+
+<body class="dashboard-body">
+
+    <!-- NAVBAR -->
+    <nav class="navbar" id="navbar">
+        <a href="/" class="nav-brand">
+            <div class="logo-badge">
+                <span class="logo-5g">5G</span>
+                <span class="logo-text">SLICING</span>
+            </div>
+            <span class="sim-tag">ACADEMIC SIMULATION</span>
+        </a>
+
+        <ul class="nav-links" id="navLinks">
+            <li><a href="/" class="nav-link" id="nav-home">Home</a></li>
+            <li><a href="/dashboard" class="nav-link active" id="nav-dashboard">Dashboard (NOC)</a></li>
+            <li><a href="/results" class="nav-link" id="nav-results">Analytics & Results</a></li>
+        </ul>
+
+        <div class="nav-status">
+            <span class="pulse-dot" id="global-pulse"></span>
+            <span id="conn-status-text">Connected: 100 Mbps Carrier</span>
+        </div>
+
+        <button class="hamburger" id="hamburger" aria-label="Toggle Navigation">
+            <span></span><span></span><span></span>
+        </button>
+    </nav>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- MAIN DASHBOARD CONTENT -->
+    <main class="container dash-wrapper">
+
+        <!-- DASHBOARD HEADER -->
+        <header class="dash-header">
+            <div class="dash-title-wrap">
+                <h1>
+                    <span>📡</span> 5G Network Operations Center
+                </h1>
+                <p class="dash-sub">Dynamic Resource Allocation & Logical Slice Orchestration (Fixed 100 Mbps Carrier)
+                </p>
+            </div>
+            <div class="dash-meta-pills">
+                <span class="sim-tag">SIMULATED METRICS ONLY</span>
+                <span class="badge status-active" id="sync-time-badge">
+                    <span>🕒</span> Last Sync: <strong id="lastSyncTime" class="mono">--:--:--</strong>
+                </span>
+                <button class="btn btn-secondary btn-sm" id="btn-auto-refresh" onclick="toggleAutoRefresh()">
+                    <span id="refresh-icon">⏱️</span> Auto-Refresh: <strong id="refresh-state-text">ON (3s)</strong>
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="fetchState()">
+                    <span>↻</span> Sync Now
+                </button>
+            </div>
+        </header>
+
+        <!-- KPI SUMMARY ROW (Feature A) -->
+        <section class="kpi-grid" aria-label="Network Key Performance Indicators">
+            <div class="glass-card kpi-card" id="kpi-capacity">
+                <div class="kpi-icon" style="color: #38bdf8;">🌐</div>
+                <div class="kpi-body">
+                    <span class="kpi-val mono" id="kpi-val-cap">100 Mbps</span>
+                    <span class="kpi-label">Total Carrier Capacity</span>
+                </div>
+            </div>
+
+            <div class="glass-card kpi-card" id="kpi-allocated">
+                <div class="kpi-icon" style="color: #10b981;">⚡</div>
+                <div class="kpi-body">
+                    <span class="kpi-val mono" id="kpi-val-alloc">100 Mbps</span>
+                    <span class="kpi-label">Allocated Bandwidth</span>
+                </div>
+            </div>
+
+            <div class="glass-card kpi-card" id="kpi-available">
+                <div class="kpi-icon" style="color: #a855f7;">🔄</div>
+                <div class="kpi-body">
+                    <span class="kpi-val mono" id="kpi-val-avail">0 Mbps</span>
+                    <span class="kpi-label">Available Headroom</span>
+                </div>
+            </div>
+
+            <div class="glass-card kpi-card" id="kpi-demand">
+                <div class="kpi-icon" style="color: #f59e0b;">📈</div>
+                <div class="kpi-body">
+                    <span class="kpi-val mono" id="kpi-val-demand">100 Mbps</span>
+                    <span class="kpi-label">Total Traffic Demand</span>
+                </div>
+            </div>
+
+            <div class="glass-card kpi-card" id="kpi-unmet">
+                <div class="kpi-icon" style="color: #ef4444;">⚠️</div>
+                <div class="kpi-body">
+                    <span class="kpi-val mono" id="kpi-val-unmet">0 Mbps</span>
+                    <span class="kpi-label">Unmet Demand</span>
+                </div>
+            </div>
+
+            <div class="glass-card kpi-card" id="kpi-util">
+                <div class="kpi-icon" style="color: #38bdf8;">📊</div>
+                <div class="kpi-body">
+                    <span class="kpi-val mono" id="kpi-val-util">72%</span>
+                    <span class="kpi-label">Network Utilization</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- LIVE BANDWIDTH ALLOCATION PROGRESS BAR -->
+        <section class="glass-card alloc-bar-card" aria-label="Dynamic Bandwidth Distribution">
+            <div class="alloc-bar-top">
+                <div class="alloc-bar-title">
+                    <span>⚖️</span>
+                    <span>Live 100 Mbps Resource Allocation Across Slices</span>
+                </div>
+                <span class="alloc-capacity-pill">Strict Constraint: Exactly 100 Mbps Total</span>
+            </div>
+
+            <div class="alloc-track" id="allocTrack">
+                <div class="alloc-segment seg-emergency" id="alloc-seg-em" style="width: 20%;"
+                    title="Emergency Slice: 20 Mbps">
+                    <span id="alloc-seg-em-text">Emergency: 20 Mbps (20%)</span>
+                </div>
+                <div class="alloc-segment seg-iot" id="alloc-seg-iot" style="width: 30%;"
+                    title="Smart IoT Slice: 30 Mbps">
+                    <span id="alloc-seg-iot-text">Smart IoT: 30 Mbps (30%)</span>
+                </div>
+                <div class="alloc-segment seg-video" id="alloc-seg-vid" style="width: 50%;"
+                    title="Video Slice: 50 Mbps">
+                    <span id="alloc-seg-vid-text">Video: 50 Mbps (50%)</span>
+                </div>
+            </div>
+
+            <div class="alloc-legend">
+                <div class="legend-item">
+                    <span class="legend-dot em"></span>
+                    <span>Emergency (URLLC): <strong id="leg-em-val" class="mono">20 Mbps</strong> (Min guaranteed: 15
+                        Mbps)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot iot"></span>
+                    <span>Smart IoT (mMTC): <strong id="leg-iot-val" class="mono">30 Mbps</strong> (Min guaranteed: 10
+                        Mbps)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot vid"></span>
+                    <span>Video (eMBB): <strong id="leg-vid-val" class="mono">50 Mbps</strong> (Min guaranteed: 5
+                        Mbps)</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURE E: INTERACTIVE 5G NETWORK TOPOLOGY -->
+        <section class="glass-card topology-card" aria-label="Interactive 5G Topology Visualizer">
+            <div class="topo-header">
+                <div class="topo-title">
+                    <span>🌐</span>
+                    <span>Interactive 5G End-to-End Network Topology</span>
+                </div>
+                <div class="dash-meta-pills">
+                    <span class="badge status-active" id="topo-state-badge">CARRIER: NORMAL</span>
+                    <span class="sim-tag">REAL-TIME FLOW VISUALIZER</span>
+                </div>
+            </div>
+
+            <div class="topo-container" id="topologyContainer">
+                <!-- 5G Core Network Node -->
+                <div class="topo-core">
+                    <div class="core-box">
+                        <span class="core-icon">🏢</span>
+                        <span class="core-label">5G Core (5GC)</span>
+                        <span class="core-sub">AMF / SMF / UPF</span>
+                        <div class="badge status-active" style="margin-top: 0.5rem; font-size: 0.65rem;"
+                            id="core-badge">ONLINE</div>
+                    </div>
+                </div>
+
+                <!-- Three Virtual Slices Column -->
+                <div class="topo-slices">
+                    <!-- Emergency Lane -->
+                    <div class="topo-slice-lane lane-em active" id="topo-lane-em">
+                        <div class="lane-info">
+                            <span class="lane-name">
+                                <span>🚑</span> Emergency Slice (URLLC)
+                            </span>
+                            <span class="lane-sub">Priority 3 (HIGH) · Min 15 Mbps</span>
+                        </div>
+                        <div class="lane-stats">
+                            <span class="lane-bw" id="topo-em-bw">20 Mbps</span>
+                            <span class="badge qos-pass" id="topo-em-qos">PASS</span>
+                        </div>
+                    </div>
+
+                    <!-- Smart IoT Lane -->
+                    <div class="topo-slice-lane lane-iot active" id="topo-lane-iot">
+                        <div class="lane-info">
+                            <span class="lane-name">
+                                <span>🚦</span> Smart IoT Slice (mMTC)
+                            </span>
+                            <span class="lane-sub">Priority 2 (MEDIUM) · Min 10 Mbps</span>
+                        </div>
+                        <div class="lane-stats">
+                            <span class="lane-bw" id="topo-iot-bw">30 Mbps</span>
+                            <span class="badge qos-pass" id="topo-iot-qos">PASS</span>
+                        </div>
+                    </div>
+
+                    <!-- Video Lane -->
+                    <div class="topo-slice-lane lane-video active" id="topo-lane-vid">
+                        <div class="lane-info">
+                            <span class="lane-name">
+                                <span>🎥</span> Video Streaming Slice (eMBB)
+                            </span>
+                            <span class="lane-sub">Priority 1 (NORMAL) · Min 5 Mbps</span>
+                        </div>
+                        <div class="lane-stats">
+                            <span class="lane-bw" id="topo-vid-bw">50 Mbps</span>
+                            <span class="badge qos-pass" id="topo-vid-qos">PASS</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Physical Service Endpoints Column -->
+                <div class="topo-endpoints">
+                    <div class="endpoint-card" id="ep-em">
+                        <span class="endpoint-icon">🚑</span>
+                        <div class="endpoint-text">
+                            <h4>Ambulance Comms</h4>
+                            <p id="ep-em-desc">Telemetry & Life-Support</p>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-card" id="ep-iot">
+                        <span class="endpoint-icon">🚦</span>
+                        <div class="endpoint-text">
+                            <h4>Smart City Sensors</h4>
+                            <p id="ep-iot-desc">Traffic Light Synchronization</p>
+                        </div>
+                    </div>
+
+                    <div class="endpoint-card" id="ep-vid">
+                        <span class="endpoint-icon">🎥</span>
+                        <div class="endpoint-text">
+                            <h4>Surveillance & CCTV</h4>
+                            <p id="ep-vid-desc">4K Video Surveillance Feeds</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- THREE SLICE MONITORING CARDS (Feature A & C) -->
+        <section class="slices-grid" aria-label="Individual Slice Monitoring Cards">
+
+            <!-- 1. Emergency Slice Card -->
+            <article class="glass-card slice-card card-emergency" id="card-emergency">
+                <div class="sc-header">
+                    <div class="sc-title-group">
+                        <div class="sc-icon-box" style="color: var(--emergency);">🚑</div>
+                        <div class="sc-names">
+                            <h3>Emergency Slice</h3>
+                            <span class="sc-type">URLLC · Life-Critical Services</span>
+                        </div>
+                    </div>
+                    <div class="sc-bw-block">
+                        <span class="sc-bw-val mono" id="em-bw-val">20</span>
+                        <span class="sc-bw-unit">Mbps</span>
+                    </div>
+                </div>
+
+                <div class="dash-meta-pills">
+                    <span class="badge priority-high">HIGH PRIORITY</span>
+                    <span class="badge status-active" id="em-status-badge">ACTIVE</span>
+                    <span class="badge qos-pass" id="em-qos-badge">QoS: PASS</span>
+                    <span class="sim-tag" id="em-traffic-badge">TRAFFIC: NORMAL</span>
+                </div>
+
+                <div class="sc-meter-wrap">
+                    <div class="sc-meter-meta">
+                        <span>Demand vs Allocation</span>
+                        <span class="mono"><strong id="em-demand-text">20 Mbps</strong> requested</span>
+                    </div>
+                    <div class="sc-track">
+                        <div class="sc-fill em-fill" id="em-meter-fill" style="width: 20%;"></div>
+                    </div>
+                </div>
+
+                <!-- QoS Metrics Sub-Grid -->
+                <div class="sc-qos-grid">
+                    <div class="qos-metric-cell">
+                        <span class="qos-metric-val" id="em-lat-val">4.5 ms</span>
+                        <span class="qos-metric-label">Latency</span>
+                    </div>
+                    <div class="qos-metric-cell">
+                        <span class="qos-metric-val" id="em-jit-val">1.0 ms</span>
+                        <span class="qos-metric-label">Jitter</span>
+                    </div>
+                    <div class="qos-metric-cell">
+                        <span class="qos-metric-val" id="em-loss-val">0.01%</span>
+                        <span class="qos-metric-label">Packet Loss</span>
+                    </div>
+                    <div class="qos-metric-cell">
+                        <span class="qos-metric-val" id="em-unmet-val">0 Mbps</span>
+                        <span class="qos-metric-label">Unmet</span>
+                    </div>
+                </div>
+
+                <div class="sc-footer">
+                    <span class="sc-endpoints-label">Endpoints: <strong>Ambulance Fleet & Hospital Grid</strong></span>
+                    <span class="mono" style="color: var(--emergency);">P3 / 3</span>
+                </div>
+            </article>
+
+            <!-- 2. Smart IoT Slice Card -->
+            <article class="glass-card slice-card card-iot" id="card-iot">
+                <div class="sc-header">
+                    <div class="sc-title-group">
+                        <div class="sc-icon-box" style="color: var(--iot);">🚦</div>
+                        <div class="sc-names">
+                            <h3>Smart IoT Slice</h3>
+                            <span class="sc-type">mMTC · Sensor Infrastructure</span>
+                        </div>
+                    </div>
+                    <div class="sc-bw-block">
+                        <span class="sc-bw-val mono" id="iot-bw-val">30</span>
+                        <span class="sc-bw-unit">Mbps</span>
+                    </div>
+                </div>
+
+                <div class="dash-meta-pills">
+                    <span class="badge priority-medium">MEDIUM PRIORITY</span>
+                    <span class="badge status-active" id="iot-status-badge">ACTIVE</span>
+                    <span class="badge qos-pass" id="iot-qos-badge">QoS: PASS</span>
+                    <span class="sim-tag" id="iot-traffic-badge">TRAFFIC: NORMAL</span>
+                </div>
+
+                <div class="sc-meter-wrap">
+                    <div class="sc-meter-meta">
+                        <span>Demand vs Allocation</span>
+                        <span class="mono"><strong id="iot-demand-text">30 Mbps</strong> requested</span>
+                    </div>
+                    <div class="sc-track">
+                        <div class="sc-fill iot-fill" id="iot-meter-fill" style="width: 30%;"></div>
+                    </div>
+                </div>
+
+                <!-- QoS Metrics Sub-Grid -->
+                <div class="sc-qos-grid">
+                    <div class="qos-metric-cell">
+                        <span class="qos-metric-val" id="iot-lat-val">18.0 ms</span>
+                        <span class="qos-metric-label">Latency</span>
+                    </div>
+                    <div class="qos-metric-cell">
+                        <span class="qos-metric-val" id="iot-jit-val">3.0 ms</span>
+                        <span class="qos-metric-label">Jitter</span>
+                    </div>
+                    <div class="qos-metric-cell">
+                        <span class="qos-metric-val" id="iot-loss-val">0.05%</span>
+                        <span class="qos-metric-label">Packet Loss</span>
+                    </div>
+                    <div class="qos-metric-cell">
+                        <span class="qos-metric-val" id="iot-unmet-val">0 Mbps</span>
+                        <span class="qos-metric-label">Unmet</span>
+                    </div>
+                </div>
+
+                <div class="sc-footer">
+                    <span class="sc-endpoints-label">Endpoints: <strong>Smart City Sensors & Traffic
+                            Grid</strong></span>
+                    <span class="mono" style="color: var(--iot);">P2 / 3</span>
+                </div>
+            </article>
+
+            <!-- 3. Video Slice Card -->
+            <article class="glass-card slice-card card-video" id="card-video">
+                <div class="sc-header">
+                    <div class="sc-title-group">
+                        <div class="sc-icon-box" style="color: var(--video);">🎥</div>
+                        <div class="sc-names">
+                            <h3>Video Slice</h3>
+                            <span class="sc-type">eMBB · Broadband Streaming</span>
+                        </div>
+                    </div>
+                    <div class="sc-bw-block">
+                        <span class="sc-bw-val mono" id="vid-bw-val">50</span>
+                        <span class="sc-bw-unit">Mbps</span>
+                    </div>
+                </div>
+
+                <div class="dash-meta-pills">
+                    <span class="badge priority-normal">NORMAL PRIORITY</span>
+                    <span class="badge status-active" id="vid-status-badge">ACTIVE</span>
+                    <span class="badge qos-pass" id="vid-qos-badge">QoS: PASS</span>
+                    <span class="sim-tag" id="vid-traffic-badge">TRAFFIC: NORMAL</span>
+                </div>
+
+                <div class="sc-meter-wrap">
+                    <div class="sc-meter-meta">
+                        <span>Demand vs Allocation</span>
+                        <span class="mono"><strong id="vid-demand-text">50 Mbps</strong> requested</span>
+                    </div>
+                    <div class="sc-track">
+                        <div class="sc-fill vid-fill" id="vid-meter-fill" style="width: 50%;"></div>
+                    </div>
+                </div>
+
+                <!-- QoS Metrics Sub-Grid -->
+                <div class="sc-qos-grid">
+                    <div class="qos-metric-cell">
+                        <span class="qos-metric-val" id="vid-lat-val">28.0 ms</span>
+                        <span class="qos-metric-label">Latency</span>
+                    </div>
+                    <div class="qos-metric-cell">
+                        <span class="qos-metric-val" id="vid-jit-val">5.0 ms</span>
+                        <span class="qos-metric-label">Jitter</span>
+                    </div>
+                    <div class="qos-metric-cell">
+                        <span class="qos-metric-val" id="vid-loss-val">0.10%</span>
+                        <span class="qos-metric-label">Packet Loss</span>
+                    </div>
+                    <div class="qos-metric-cell">
+                        <span class="qos-metric-val" id="vid-unmet-val">0 Mbps</span>
+                        <span class="qos-metric-label">Unmet</span>
+                    </div>
+                </div>
+
+                <div class="sc-footer">
+                    <span class="sc-endpoints-label">Endpoints: <strong>4K CCTV Feeds & Media Streamers</strong></span>
+                    <span class="mono" style="color: var(--video);">P1 / 3</span>
+                </div>
+            </article>
+
+        </section>
+
+        <!-- FEATURE G & D: SCENARIO SIMULATOR & FAULT CONTROLS -->
+        <section class="glass-card controls-card" aria-label="Simulation Scenario Controls">
+            <div class="controls-header">
+                <div>
+                    <h2>🎮 Scenario Simulator & Fault Injection</h2>
+                    <p class="dash-sub">Trigger dynamic re-allocation scenarios, fault conditions, or network recovery
+                    </p>
+                </div>
+                <div class="dash-meta-pills">
+                    <button class="btn btn-secondary btn-sm" onclick="toggleCustomDrawer()">
+                        <span>⚙️</span> Custom Demand Sliders
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleThresholdsModal()">
+                        <span>🎯</span> Configure QoS Thresholds
+                    </button>
+                </div>
+            </div>
+
+            <!-- 8 SCENARIO BUTTONS (Feature G) -->
+            <div class="scenario-buttons-grid">
+                <!-- 1. Normal Traffic -->
+                <button class="scen-btn scen-btn-success" id="btn-scen-normal" onclick="runScenario('normal')">
+                    <span class="scen-icon">📶</span>
+                    <div class="scen-btn-text">
+                        <span>1. Normal Traffic</span>
+                        <span class="scen-btn-sub">Balanced: 20 / 30 / 50 Mbps</span>
+                    </div>
+                </button>
+
+                <!-- 2. Emergency Surge -->
+                <button class="scen-btn scen-btn-danger" id="btn-scen-emergency" onclick="runScenario('emergency')">
+                    <span class="scen-icon">🚨</span>
+                    <div class="scen-btn-text">
+                        <span>2. Emergency Surge</span>
+                        <span class="scen-btn-sub">Ambulances surge to 60 Mbps (Priority)</span>
+                    </div>
+                </button>
+
+                <!-- 3. Smart IoT Surge -->
+                <button class="scen-btn scen-btn-warning" id="btn-scen-iot" onclick="runScenario('iot')">
+                    <span class="scen-icon">🚦</span>
+                    <div class="scen-btn-text">
+                        <span>3. Smart IoT Surge</span>
+                        <span class="scen-btn-sub">City sensors surge to 60 Mbps</span>
+                    </div>
+                </button>
+
+                <!-- 4. Video Surge -->
+                <button class="scen-btn" id="btn-scen-video" onclick="runScenario('video')">
+                    <span class="scen-icon">🎥</span>
+                    <div class="scen-btn-text">
+                        <span>4. Video Surge</span>
+                        <span class="scen-btn-sub">4K CCTV streaming surges to 75 Mbps</span>
+                    </div>
+                </button>
+
+                <!-- 5. Congestion -->
+                <button class="scen-btn scen-btn-danger" id="btn-scen-congestion" onclick="runScenario('congestion')">
+                    <span class="scen-icon">⚠️</span>
+                    <div class="scen-btn-text">
+                        <span>5. Network Congestion</span>
+                        <span class="scen-btn-sub">Total 165 Mbps demand > 100 Mbps carrier</span>
+                    </div>
+                </button>
+
+                <!-- 6. Slice Degradation -->
+                <button class="scen-btn scen-btn-warning" id="btn-scen-degradation"
+                    onclick="runScenario('degradation')">
+                    <span class="scen-icon">🔧</span>
+                    <div class="scen-btn-text">
+                        <span>6. Slice Degradation</span>
+                        <span class="scen-btn-sub">Simulate RF fading on Video slice</span>
+                    </div>
+                </button>
+
+                <!-- 7. Recover Network -->
+                <button class="scen-btn scen-btn-success" id="btn-scen-recover" onclick="runScenario('recover')">
+                    <span class="scen-icon">🔄</span>
+                    <div class="scen-btn-text">
+                        <span>7. Recover Network</span>
+                        <span class="scen-btn-sub">Clear impairments & restore QoS</span>
+                    </div>
+                </button>
+
+                <!-- 8. Reset Simulation -->
+                <button class="scen-btn" id="btn-scen-reset" onclick="resetSimulation()">
+                    <span class="scen-icon">🔁</span>
+                    <div class="scen-btn-text">
+                        <span>8. Reset Simulation</span>
+                        <span class="scen-btn-sub">Restore baseline initial state</span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- COLLAPSIBLE CUSTOM DEMAND SLIDERS DRAWER -->
+            <div id="customDemandDrawer"
+                style="display: none; margin-top: 1.5rem; padding: 1.25rem; background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.08);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 style="font-size: 1rem;">⚙️ Manual Slice Demand Injection (Interactive Custom Traffic)</h3>
+                    <span class="sim-tag">EXPERIMENTAL ENGINE</span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.25rem;">
+                    <div>
+                        <label
+                            style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:0.35rem;">
+                            <span>🚑 Emergency Demand:</span>
+                            <strong id="custom-em-val" class="mono">20 Mbps</strong>
+                        </label>
+                        <input type="range" id="slider-em" min="0" max="100" value="20"
+                            style="width:100%; accent-color: var(--emergency);" oninput="updateCustomSliders()" />
+                    </div>
+                    <div>
+                        <label
+                            style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:0.35rem;">
+                            <span>🚦 Smart IoT Demand:</span>
+                            <strong id="custom-iot-val" class="mono">30 Mbps</strong>
+                        </label>
+                        <input type="range" id="slider-iot" min="0" max="100" value="30"
+                            style="width:100%; accent-color: var(--iot);" oninput="updateCustomSliders()" />
+                    </div>
+                    <div>
+                        <label
+                            style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:0.35rem;">
+                            <span>🎥 Video Demand:</span>
+                            <strong id="custom-vid-val" class="mono">50 Mbps</strong>
+                        </label>
+                        <input type="range" id="slider-vid" min="0" max="100" value="50"
+                            style="width:100%; accent-color: var(--video);" oninput="updateCustomSliders()" />
+                    </div>
+                </div>
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <span style="font-size: 0.82rem; color: var(--text-muted);">
+                        Total Custom Demand: <strong id="custom-total-demand" class="mono">100 Mbps</strong>
+                    </span>
+                    <button class="btn btn-primary btn-sm" onclick="applyCustomDemand()">
+                        🚀 Run Priority Allocation on Custom Demand
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LOWER DASHBOARD GRID: ALERTS PANEL & ACTIVITY LOG -->
+        <section class="lower-dash-grid">
+
+            <!-- FEATURE H: ALERTS & NOTIFICATIONS PANEL -->
+            <div class="glass-card panel-card" id="alertPanel">
+                <div class="panel-header">
+                    <div>
+                        <h3 style="font-size: 1rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <span>🔔</span> Active Alerts & Fault Explanations
+                        </h3>
+                        <p class="dash-sub">Severity tagged: CRITICAL, WARNING, INFO with corrective actions</p>
+                    </div>
+                    <span class="badge status-active" id="alert-count-badge">0 Alerts</span>
+                </div>
+                <div class="panel-body" id="alertsContainer">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- ACTIVITY AUDIT LOG -->
+            <div class="glass-card panel-card" id="activityLogPanel">
+                <div class="panel-header">
+                    <div>
+                        <h3 style="font-size: 1rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <span>📜</span> Dynamic Orchestrator Activity Log
+                        </h3>
+                        <p class="dash-sub">Timestamped events & allocation decisions</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" onclick="clearActivityLog()">Clear</button>
+                </div>
+                <div class="panel-body" id="activityLogContainer">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- QOS THRESHOLDS CONFIG MODAL (Feature C) -->
+    <div id="thresholdsModal"
+        style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 1rem;">
+        <div class="glass-card"
+            style="max-width: 540px; width: 100%; padding: 1.75rem; border: 1px solid var(--glass-border-hover);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h3 style="font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🎯</span> Configurable QoS Thresholds
+                </h3>
+                <button onclick="toggleThresholdsModal()"
+                    style="background: none; border: none; color: #fff; font-size: 1.25rem; cursor: pointer;">✕</button>
+            </div>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+                Adjust boundary conditions that determine slice PASS, WARNING, or FAIL status in real time.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label style="display:flex; justify-content:space-between; font-size:0.82rem;">
+                        <span>Latency Warning Threshold:</span>
+                        <strong id="th-lat-warn-val" class="mono">40 ms</strong>
+                    </label>
+                    <input type="range" id="th-lat-warn" min="10" max="100" value="40" style="width:100%;"
+                        oninput="document.getElementById('th-lat-warn-val').textContent=this.value+' ms'" />
+                </div>
+                <div>
+                    <label style="display:flex; justify-content:space-between; font-size:0.82rem;">
+                        <span>Latency Critical Fail Threshold:</span>
+                        <strong id="th-lat-fail-val" class="mono">80 ms</strong>
+                    </label>
+                    <input type="range" id="th-lat-fail" min="50" max="200" value="80" style="width:100%;"
+                        oninput="document.getElementById('th-lat-fail-val').textContent=this.value+' ms'" />
+                </div>
+                <div>
+                    <label style="display:flex; justify-content:space-between; font-size:0.82rem;">
+                        <span>Packet Loss Warning:</span>
+                        <strong id="th-loss-warn-val" class="mono">1.0 %</strong>
+                    </label>
+                    <input type="range" id="th-loss-warn" min="0.1" max="5.0" step="0.1" value="1.0" style="width:100%;"
+                        oninput="document.getElementById('th-loss-warn-val').textContent=this.value+' %'" />
+                </div>
+                <div>
+                    <label style="display:flex; justify-content:space-between; font-size:0.82rem;">
+                        <span>Packet Loss Fail:</span>
+                        <strong id="th-loss-fail-val" class="mono">4.0 %</strong>
+                    </label>
+                    <input type="range" id="th-loss-fail" min="2.0" max="15.0" step="0.5" value="4.0"
+                        style="width:100%;"
+                        oninput="document.getElementById('th-loss-fail-val').textContent=this.value+' %'" />
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+                <button class="btn btn-secondary btn-sm" onclick="resetDefaultThresholds()">Reset Defaults</button>
+                <button class="btn btn-primary btn-sm" onclick="saveThresholds()">Save & Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container footer-content">
+            <div class="footer-left">
+                <span class="logo-5g" style="font-size: 1.1rem;">5G NETWORK SLICING FOR SMART SERVICES</span>
+                <p>College Capstone Project — Dynamic Resource Allocation, QoS Optimization & Slice Orchestration</p>
+                <p style="font-size: 0.75rem; color: var(--text-dim);">Strictly in-memory software simulation — 100 Mbps
+                    carrier capacity constraint.</p>
+            </div>
+            <div class="footer-right">
+                <a href="/results" class="btn btn-secondary btn-sm">View Analytics & History</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+    <script>
+        // Hamburger Menu
+        const hamburger = document.getElementById('hamburger');
+        const navLinks = document.getElementById('navLinks');
+        if (hamburger && navLinks) {
+            hamburger.addEventListener('click', () => {
+                navLinks.classList.toggle('open');
+                hamburger.classList.toggle('active');
+            });
+        }
+    </script>
+</body>
+
+</html>
